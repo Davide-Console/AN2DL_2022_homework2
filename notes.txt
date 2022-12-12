@@ -6,7 +6,7 @@ DATA NORMALIZATION
 We noticed that the difference between the mean values of the six features was too big.
 For this reason the MinMaxScaler was not adopted since each feature had a very narrow range of values with big
  differences between one feature and the other.
-We used the StandardScaler to center every feature in mean=0.
+We used the StandardScaler (SS) to center every feature in mean=0.
 
 WINDOWING
 For now, models seem to prefer big windows rather then small ones.
@@ -14,7 +14,8 @@ No consideration on the stride.
 
 MODELS
 * 1DCNN
-  train 69.70% test 60.49% using CategoricalCrossEntropy
+  train 69.70% test 60.49% hiddenTest 66.14% using SS CategoricalCrossEntropy
+  train 74.88% test 68.31& hiddenTest 69.77% using SS variableTraining(adjustWeights) CategoricalCrossentropy
   train 62.69% test 55.56% using CategoricalFocalLoss
 * LSTM
   train 72.57% test 53.65%
@@ -24,5 +25,7 @@ MODELS
   relationships in sequential data like the words in this sentence. Seems to be the worst net of the tested ones.
   train 47.17% test 44.35%
 
-TRAIN FEATURES
+TESTED TRAIN FEATURES
 class weights
+categorical cross entropy
+categorical focal loss
