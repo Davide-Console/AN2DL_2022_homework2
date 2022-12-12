@@ -3,6 +3,7 @@ from networks import *
 import os
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger
 import random
+import execution_settings
 
 # Random seed for reproducibility
 seed = 313
@@ -51,8 +52,8 @@ def train():
     x_test = apply_scaler('scaler.pkl', x_test)
 
     # windowing
-    x_train, y_train = build_sequences(x_train, y_train, 12, 3)
-    x_test, y_test = build_sequences(x_test, y_test, 12, 3)
+    x_train, y_train = build_sequences(x_train, y_train, 18, 9)
+    x_test, y_test = build_sequences(x_test, y_test, 18, 9)
     print(x_train.shape[0])
     print(y_train.shape[0])
     y_train = tfk.utils.to_categorical(y_train)
