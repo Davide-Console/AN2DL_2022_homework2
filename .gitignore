@@ -2,6 +2,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
+scaler.pkl
+float_model/
+tb_logs/
+dataset/
+*.csv
 
 # C extensions
 *.so
@@ -114,7 +119,7 @@ venv.bak/
 # Spyder project settings
 .spyderproject
 .spyproject
-
+.idea/
 # Rope project settings
 .ropeproject
 
