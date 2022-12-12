@@ -6,7 +6,7 @@ import numpy as np
 class model:
     def __init__(self, path):
         self.scaler = pickle.load(open(os.path.join(path, 'SubmissionModel/scaler.pkl'), 'rb'))
-        self.model = tf.keras.models.load_model(os.path.join(path, 'SubmissionModel/0.6255-0.6356-f_model.h5'))
+        self.model = tf.keras.models.load_model(os.path.join(path, 'SubmissionModel/0.6831-0.7488-f_model.h5'))
 
     def reshape(self, data):
         dims = data.shape
