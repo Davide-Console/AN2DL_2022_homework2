@@ -23,7 +23,7 @@ def build_1DCNN_classifier(input_shape, classes, filters=128):
     model = tfk.Model(inputs=input_layer, outputs=output_layer, name='model')
 
     # Compile the model
-    model.compile(loss=tfk.losses.CategoricalCrossentropy(), optimizer=tfk.optimizers.Adam(learning_rate=1e-2), metrics='accuracy')
+    model.compile(loss=tfk.losses.CategoricalCrossentropy(), optimizer=tfk.optimizers.Adam(learning_rate=1e-3), metrics='accuracy')
 
     # Return the model
     return model

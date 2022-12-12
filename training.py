@@ -1,4 +1,5 @@
 from sklearn.metrics import classification_report
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from data_utils import *
 from networks import *
@@ -44,18 +45,22 @@ def train():
     # load dataset
     x_data, y_data = load_dataset()
 
-    # split dataset
-    # NB split before windowing to be sure not to have same observation windows in different set
-    x_train, x_test, y_train, y_test = split_dataset(x_data, y_data, split=0.7, shuffle=True)
-
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+    for i, (train_index, test_index) in enumerate(sss.split(x_data, y_data)):
+        x_train = x_data[train_index]
+        y_train = y_data[train_index]
+        x_test = x_data[test_index]
+        y_test = y_data[test_index]
+    #
     # normalize dataset
     fit_scaler('scaler.pkl', x_train)
     x_train = apply_scaler('scaler.pkl', x_train)
     x_test = apply_scaler('scaler.pkl', x_test)
+    #
+    # # windowing
+    # x_train, y_train = build_sequences(x_train, y_train, 12, 3)
+    # x_test, y_test = build_sequences(x_test, y_test, 12, 3)
 
-    # windowing
-    x_train, y_train = build_sequences(x_train, y_train, 12, 3)
-    x_test, y_test = build_sequences(x_test, y_test, 12, 3)
     print(x_train.shape[0])
     print(y_train.shape[0])
     y_train = tfk.utils.to_categorical(y_train)
@@ -84,8 +89,8 @@ def train():
         callbacks=callbacks
     )
 
-    y_true = y_train
-    y_pred = model.predict(x_train)
+    y_true = y_test
+    y_pred = model.predict(x_test)
 
     print(classification_report(np.argmax(y_true, axis=-1), np.argmax(y_pred, axis=-1), digits=4,
                                 output_dict=False))

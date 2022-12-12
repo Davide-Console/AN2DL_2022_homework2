@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import joblib
 import matplotlib.pyplot as plt
 
@@ -74,7 +74,8 @@ def restore_shape(reshaped_data, original_shape):
 
 
 def fit_scaler(scaler_filename, data):
-    scaler = MinMaxScaler()
+    # scaler = MinMaxScaler(feature_range=(-1, 1))
+    scaler = StandardScaler()
     bidim_data = reshape(data)  # data.reshape(dims[0], -1)
     scaler = scaler.fit(bidim_data)
     joblib.dump(scaler, scaler_filename)
