@@ -70,9 +70,9 @@ def train():
     batch_size = 128
     filters = 128
 
-    model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
-    #model = build_LSTM_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
-    #model = build_BiLSTM_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    #model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    #model = build_LSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
+    model = build_BiLSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
 
     model.summary()
 

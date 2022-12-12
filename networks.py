@@ -28,17 +28,17 @@ def build_1DCNN_classifier(input_shape, classes, filters=128):
     # Return the model
     return model
 
-def build_LSTM_classifier(input_shape, classes, filters=128):
+def build_LSTM_classifier(input_shape, classes, units=128):
     # Build the neural network layer by layer
     input_layer = tfkl.Input(shape=input_shape, name='Input')
 
     # Feature extractor
-    lstm = tfkl.LSTM(filters, return_sequences=True)(input_layer)
-    lstm = tfkl.LSTM(filters)(lstm)
+    lstm = tfkl.LSTM(units, return_sequences=True)(input_layer)
+    lstm = tfkl.LSTM(units)(lstm)
     dropout = tfkl.Dropout(.5, seed=seed)(lstm)
 
     # Classifier
-    classifier = tfkl.Dense(filters, activation='relu')(dropout)
+    classifier = tfkl.Dense(units, activation='relu')(dropout)
     output_layer = tfkl.Dense(classes, activation='softmax')(classifier)
 
     # Connect input and output through the Model class
@@ -50,17 +50,17 @@ def build_LSTM_classifier(input_shape, classes, filters=128):
     # Return the model
     return model
 
-def build_BiLSTM_classifier(input_shape, classes, filters):
+def build_BiLSTM_classifier(input_shape, classes, units):
     # Build the neural network layer by layer
     input_layer = tfkl.Input(shape=input_shape, name='Input')
 
     # Feature extractor
-    bilstm = tfkl.Bidirectional(tfkl.LSTM(filters, return_sequences=True))(input_layer)
-    bilstm = tfkl.Bidirectional(tfkl.LSTM(filters))(bilstm)
+    bilstm = tfkl.Bidirectional(tfkl.LSTM(units, return_sequences=True))(input_layer)
+    bilstm = tfkl.Bidirectional(tfkl.LSTM(units))(bilstm)
     dropout = tfkl.Dropout(.5, seed=seed)(bilstm)
 
     # Classifier
-    classifier = tfkl.Dense(filters, activation='relu')(dropout)
+    classifier = tfkl.Dense(units, activation='relu')(dropout)
     output_layer = tfkl.Dense(classes, activation='softmax')(classifier)
 
     # Connect input and output through the Model class
