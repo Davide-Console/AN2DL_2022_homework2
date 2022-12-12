@@ -18,6 +18,37 @@ tf.random.set_seed(seed)
 tf.compat.v1.set_random_seed(seed)
 
 
+def compute_weights(labels):
+    """
+    Compute the weights for each class. The higher the number of samples for a class, the lower the weight.
+    Parameters
+    ----------
+    labels : numpy.ndarray
+        The labels of the dataset.
+    Returns
+    -------
+    dict_weights : dict
+        The weights for each class.
+    """
+    labels = np.argmax(labels, axis=-1)
+
+    occurrences = []
+    for i in np.unique(labels):
+        occurrences.append(np.sum(labels == i))
+
+    weights = []
+
+    for occurrence in occurrences:
+        weight = 1 + (1 - occurrence / np.max(occurrences))
+        weights.append(weight)
+
+    dict_weights = {}
+    for i in np.unique(labels):
+        dict_weights.update({i: weights[i]})
+
+    return dict_weights
+
+
 def get_callbacks():
     tboard = 'tb_logs'
     os.makedirs(tboard, exist_ok=True)
@@ -36,7 +67,8 @@ def get_callbacks():
 
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', mode='max', min_delta=0.05, patience=100,
                                                       restore_best_weights=False)
-    reduce_on_plateau = tfk.callbacks.ReduceLROnPlateau(monitor='val_accuracy', mode='max', patience=5, factor=0.5, min_lr=1e-5)
+    reduce_on_plateau = tfk.callbacks.ReduceLROnPlateau(monitor='val_accuracy', mode='max', patience=5, factor=0.5,
+                                                        min_lr=1e-5)
 
     return [tb_call, chkpt_call, csv_logger, early_stopping, reduce_on_plateau]
 
@@ -58,8 +90,8 @@ def train():
     x_test = apply_scaler('scaler.pkl', x_test)
     #
     # # windowing
-    x_train, y_train = build_sequences(x_train, y_train, 12, 3)
-    x_test, y_test = build_sequences(x_test, y_test, 12, 3)
+    x_train, y_train = build_sequences(x_train, y_train, 30, 3)
+    x_test, y_test = build_sequences(x_test, y_test, 30, 3)
 
     print(x_train.shape[0])
     print(y_train.shape[0])
@@ -79,16 +111,22 @@ def train():
     # training
     epochs = 500
     callbacks = get_callbacks()
-
+    class_weights=compute_weights(y_train)
     model.fit(
         x=x_train,
         y=y_train,
         batch_size=batch_size,
         epochs=epochs,
         validation_data=(x_test, y_test),
-        callbacks=callbacks
+        callbacks=callbacks,
+        class_weight=class_weights
     )
 
+    y_true = y_train
+    y_pred = model.predict(x_train)
+
+    print(classification_report(np.argmax(y_true, axis=-1), np.argmax(y_pred, axis=-1), digits=4,
+                                output_dict=False))
     y_true = y_test
     y_pred = model.predict(x_test)
 
