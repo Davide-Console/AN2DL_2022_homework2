@@ -97,9 +97,9 @@ def build_sequences(x_data, y_data, window, stride):
     for sample in range(dims[0]):
         padding_len = window - dims[1] % window
         padding = np.zeros((padding_len, dims[2]), dtype='float64')
-        temp = np.concatenate((x_data[0, :, :], padding))
+        temp = np.concatenate((x_data[sample, :, :], padding))
         idx = 0
-        while idx + window <= dims[1]:
+        while idx + window <= len(temp):
             x_output.append(temp[idx:idx + window])
             y_output.append(y_data[sample])
             idx += stride
