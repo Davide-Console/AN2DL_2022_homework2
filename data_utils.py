@@ -23,21 +23,20 @@ def split_dataset(x_data, y_data, split=0.8, shuffle=False):
     classes, classes_index = np.unique(y_data, return_index=True)
 
     for label in range(12):
-        if label != 9 and label != 3 and label != 6 and label != 2 and label != 5:
-            start = classes_index[label]
-            if label < 11:
-                len_class = classes_index[label + 1] - classes_index[label]
-            else:
-                len_class = y_data.shape[0] - classes_index[label]
+        start = classes_index[label]
+        if label < 11:
+            len_class = classes_index[label + 1] - classes_index[label]
+        else:
+            len_class = y_data.shape[0] - classes_index[label]
 
-            samples_number = math.ceil(len_class * split)
+        samples_number = math.ceil(len_class * split)
 
-            for i in range(samples_number):
-                x_train.append(x_data[start + i, :, :])
-                y_train.append(y_data[start + i])
-            for i in range(len_class - samples_number):
-                x_validation.append(x_data[start + samples_number + i, :, :])
-                y_validation.append(y_data[start + samples_number + i])
+        for i in range(samples_number):
+            x_train.append(x_data[start + i, :, :])
+            y_train.append(y_data[start + i])
+        for i in range(len_class - samples_number):
+            x_validation.append(x_data[start + samples_number + i, :, :])
+            y_validation.append(y_data[start + samples_number + i])
 
     x_train = np.array(x_train)
     y_train = np.array(y_train)
