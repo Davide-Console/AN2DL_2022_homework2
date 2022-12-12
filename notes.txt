@@ -1,0 +1,28 @@
+DATA OBSERVATION
+Dataset is strongly unbalanced.
+We did a stratified split and we trained nets with weighted samples
+
+DATA NORMALIZATION
+We noticed that the difference between the mean values of the six features was too big.
+For this reason the MinMaxScaler was not adopted since each feature had a very narrow range of values with big
+ differences between one feature and the other.
+We used the StandardScaler to center every feature in mean=0.
+
+WINDOWING
+For now, models seem to prefer big windows rather then small ones.
+No consideration on the stride.
+
+MODELS
+* 1DCNN
+  train 69.70% test 60.49% using CategoricalCrossEntropy
+  train 62.69% test 55.56% using CategoricalFocalLoss
+* LSTM
+  train 72.57% test 53.65%
+* build_BiLSTM
+  train 84.86% test 53.46%
+* TRANSORMER MODEL: A transformer model is a neural network that learns context and thus meaning by tracking
+  relationships in sequential data like the words in this sentence. Seems to be the worst net of the tested ones.
+  train 47.17% test 44.35%
+
+TRAIN FEATURES
+class weights

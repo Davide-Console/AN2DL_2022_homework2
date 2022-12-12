@@ -1,9 +1,10 @@
 import numpy as np
+import tensorflow.keras.backend as K
 import math
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import joblib
 import matplotlib.pyplot as plt
-
+import pickle
 np.random.seed(313)
 
 
@@ -74,15 +75,15 @@ def restore_shape(reshaped_data, original_shape):
 
 
 def fit_scaler(scaler_filename, data):
-    # scaler = MinMaxScaler(feature_range=(-1, 1))
     scaler = StandardScaler()
-    bidim_data = reshape(data)  # data.reshape(dims[0], -1)
+    bidim_data = reshape(data)
     scaler = scaler.fit(bidim_data)
-    joblib.dump(scaler, scaler_filename)
+    pickle.dump(scaler, open(scaler_filename, 'wb'))
+    #joblib.dump(scaler, scaler_filename, 'w')
 
 
 def apply_scaler(scaler_filename, data):
-    scaler = joblib.load(scaler_filename)
+    scaler = pickle.load(open(scaler_filename, 'rb'))
     bidim_data = reshape(data)
     bidim_data = scaler.transform(bidim_data)
     data = restore_shape(bidim_data, data.shape)
@@ -107,6 +108,39 @@ def build_sequences(x_data, y_data, window, stride):
     y_output = np.array(y_output)
     return x_output, y_output
 
+
+def categorical_focal_loss(gamma=2.0, alpha=0.25):
+    """
+    Implementation of Focal Loss from the paper in multiclass classification
+    Formula:
+        loss = -alpha*((1-p)^gamma)*log(p)
+    Parameters:
+        alpha -- the same as wighting factor in balanced cross entropy
+        gamma -- focusing parameter for modulating factor (1-p)
+    Default value:
+        gamma -- 2.0 as mentioned in the paper
+        alpha -- 0.25 as mentioned in the paper
+    """
+
+    def focal_loss(y_true, y_pred):
+        # Define epsilon so that the backpropagation will not result in NaN
+        # for 0 divisor case
+        epsilon = K.epsilon()
+        # Add the epsilon to prediction value
+        # y_pred = y_pred + epsilon
+        # Clip the prediction value
+        y_pred = K.clip(y_pred, epsilon, 1.0 - epsilon)
+        # Calculate cross entropy
+        cross_entropy = -y_true * K.log(y_pred)
+        # Calculate weight that consists of  modulating factor and weighting factor
+        weight = alpha * y_true * K.pow((1 - y_pred), gamma)
+        # Calculate focal loss
+        loss = weight * cross_entropy
+        # Sum the losses in mini_batch
+        loss = K.sum(loss, axis=1)
+        return loss
+
+    return focal_loss
 
 def plot_sample(data):
     plt.plot(np.arange(0, data.shape[1]), data[0, :, 0])

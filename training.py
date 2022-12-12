@@ -1,6 +1,5 @@
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedShuffleSplit
-
 from data_utils import *
 from networks import *
 import os
@@ -58,7 +57,7 @@ def get_callbacks():
     os.makedirs(chkpt_dir, exist_ok=True)
     chkpt_call = ModelCheckpoint(
         filepath=os.path.join(chkpt_dir, '{val_accuracy:.4f}-{accuracy:.4f}-f_model.h5'),
-        monitor='val_accuracy',
+        monitor='val_loss',
         verbose=1,
         save_best_only=True)
 
@@ -90,8 +89,8 @@ def train():
     x_test = apply_scaler('scaler.pkl', x_test)
     #
     # # windowing
-    x_train, y_train = build_sequences(x_train, y_train, 30, 3)
-    x_test, y_test = build_sequences(x_test, y_test, 30, 3)
+    #x_train, y_train = build_sequences(x_train, y_train, 30, 3)
+    #x_test, y_test = build_sequences(x_test, y_test, 30, 3)
 
     print(x_train.shape[0])
     print(y_train.shape[0])
@@ -102,11 +101,15 @@ def train():
     batch_size = 128
     filters = 128
 
-    #model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
     #model = build_LSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
-    model = build_BiLSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
-
+    #model = build_BiLSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
+    #model = build_model(x_train.shape[1:],head_size=256, num_heads=4, ff_dim=4, num_transformer_blocks=4, mlp_units=[128], mlp_dropout=0.4, dropout=0.25, n_classes=12)
     model.summary()
+
+    # Compile the model
+    model.compile(loss=categorical_focal_loss(), optimizer=tfk.optimizers.Adam(learning_rate=1e-3), metrics='accuracy')
+
 
     # training
     epochs = 500

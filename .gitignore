@@ -2,11 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
-scaler.pkl
+*.pkl
 float_model/
 tb_logs/
 dataset/
+submission.zip
 *.csv
+*.h5
 
 # C extensions
 *.so

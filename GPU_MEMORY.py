@@ -1,1 +1,1 @@
-MAX_MEM = 5000
+MAX_MEM = 2500
