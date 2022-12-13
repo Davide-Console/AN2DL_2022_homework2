@@ -9,6 +9,7 @@ dataset/
 submission.zip
 *.csv
 *.h5
+submission/SubmissionModel
 
 # C extensions
 *.so
@@ -16,7 +17,6 @@ submission.zip
 # Distribution / packaging
 .Python
 build/
-dataset/
 develop-eggs/
 dist/
 downloads/

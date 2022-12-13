@@ -9,6 +9,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from networks import *
 from data_utils import *
 from train_utils import *
+import execution_settings
 
 def compute_weights(labels):
     labels = np.argmax(labels, axis=-1)
@@ -193,7 +194,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
         print(classification_report(np.argmax(y_true, axis=-1), np.argmax(y_pred, axis=-1), digits=4,
                                     output_dict=False))
         if adjust_weights:
-            class_weights = update_weights(scores, classes, power=4)
+            class_weights = update_weights(scores, classes, power=6)
             print("Weights updated to: ")
             print(class_weights)
 
@@ -234,7 +235,8 @@ if __name__ == '__main__':
     batch_size = 128
     filters = 128
 
-    model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    # model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    model = customcnn(x_train.shape[1:], y_train.shape[-1])
 
     learn_rates = [0.001, 0.0006, 3.6784e-04, 2.1350e-04, 1.2595e-04, 8.0690e-05, 6.0140e-05, 5.2440e-05,
                    5.0330e-05, 5.0011e-05]
@@ -245,7 +247,6 @@ if __name__ == '__main__':
     for i in range(classes):
         cl_w.update({i: 1})
 
-    frozen_FE = [True] + [False] * 8
     variable_training(model, x_train, x_test, y_train, y_test, epochs=900, epoch_flags=100,
                       learn_rates=learn_rates, loss_functions=loss, class_weights=cl_w, adjust_weights=True,
                       classes=classes)

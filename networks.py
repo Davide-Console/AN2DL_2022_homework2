@@ -8,9 +8,11 @@ from tensorflow.keras.applications import VGG16
 from tensorflow.keras.models import Model, model_from_json
 import os
 import tempfile
+
 tfk = tf.keras
 tfkl = tf.keras.layers
 seed = 313
+
 
 def attach_final_layers(model, classes):
     """
@@ -73,16 +75,17 @@ def add_regularization(model, l1, l2):
     model.load_weights(tmp_weights_path, by_name=True)
     return model
 
+
 def build_1DCNN_classifier(input_shape, classes, filters=128):
     # Build the neural network layer by layer
     input_layer = tfkl.Input(shape=input_shape, name='Input')
 
     # Feature extractor
-    cnn = tfkl.Conv1D(filters,3,padding='same',activation='relu')(input_layer)
+    cnn = tfkl.Conv1D(filters, 3, padding='same', activation='relu')(input_layer)
     cnn = tfkl.MaxPooling1D()(cnn)
-    cnn = tfkl.Conv1D(filters,3,padding='same',activation='relu')(input_layer)
+    cnn = tfkl.Conv1D(filters, 3, padding='same', activation='relu')(input_layer)
     cnn = tfkl.MaxPooling1D()(cnn)
-    cnn = tfkl.Conv1D(filters,3,padding='same',activation='relu')(cnn)
+    cnn = tfkl.Conv1D(filters, 3, padding='same', activation='relu')(cnn)
     gap = tfkl.GlobalAveragePooling1D()(cnn)
     dropout = tfkl.Dropout(.5, seed=seed)(gap)
 
@@ -95,6 +98,7 @@ def build_1DCNN_classifier(input_shape, classes, filters=128):
 
     # Return the model
     return model
+
 
 def build_LSTM_classifier(input_shape, classes, units=128):
     # Build the neural network layer by layer
@@ -115,6 +119,7 @@ def build_LSTM_classifier(input_shape, classes, units=128):
     # Return the model
     return model
 
+
 def build_BiLSTM_classifier(input_shape, classes, units):
     # Build the neural network layer by layer
     input_layer = tfkl.Input(shape=input_shape, name='Input')
@@ -134,6 +139,7 @@ def build_BiLSTM_classifier(input_shape, classes, units):
     # Return the model
     return model
 
+
 def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
     # Attention and Normalization
     x = layers.MultiHeadAttention(
@@ -150,16 +156,17 @@ def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
     x = layers.LayerNormalization(epsilon=1e-6)(x)
     return x + res
 
+
 def build_model(
-    input_shape,
-    head_size,
-    num_heads,
-    ff_dim,
-    num_transformer_blocks,
-    mlp_units,
-    dropout=0,
-    mlp_dropout=0,
-    n_classes=12
+        input_shape,
+        head_size,
+        num_heads,
+        ff_dim,
+        num_transformer_blocks,
+        mlp_units,
+        dropout=0,
+        mlp_dropout=0,
+        n_classes=12
 ):
     inputs = keras.Input(shape=input_shape)
     x = inputs
@@ -174,4 +181,23 @@ def build_model(
 
     model = tfk.Model(inputs, outputs, name='model')
 
+    return model
+
+
+def customcnn(input_shape, classes):
+    input_layer = layers.Input(shape=input_shape)
+    x = layers.Conv1D(filters=64, kernel_size=3, padding="same", activation='relu')(input_layer)
+    x = layers.Conv1D(filters=128, kernel_size=3, padding="same", activation="relu")(x)
+    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
+    cnn = tfkl.Conv1D(filters=256, kernel_size=3, padding="same", activation="relu")(x)
+    cnn = tfkl.MaxPooling1D(pool_size=2, strides=2)(cnn)
+    cnn = tfkl.Conv1D(filters=512, kernel_size=3, padding="same", activation="relu")(cnn)
+    cnn = tfkl.GlobalMaxPooling1D()(cnn)
+    cnn = tfkl.Dense(512, activation="relu")(cnn)
+    cnn = tfkl.Dropout(0.4)(cnn)
+    output_layer = tfkl.Dense(classes, activation="softmax")(cnn)
+
+    model = tfk.Model(inputs=input_layer, outputs=output_layer, name='model')
+
+    # Return the model
     return model
