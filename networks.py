@@ -4,10 +4,12 @@ from tensorflow.keras.layers import Dense, GlobalAvgPool2D
 from tensorflow.keras.layers import Input, Dropout
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.models import Model, model_from_json
 import os
 import tempfile
+
+from tensorflow.python.keras.applications.efficientnet import EfficientNetB0
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -201,3 +203,24 @@ def customcnn(input_shape, classes):
 
     # Return the model
     return model
+
+
+def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.00001, l2=0.00001):
+    model = EfficientNetB0(include_top=False,
+                           weights=weights,
+                           input_shape=input_shape,
+                           classes=8)
+
+    model.trainable = True
+
+    if regularize:
+        model = add_regularization(model, l1, l2)
+
+    input_layer = Input(shape=input_shape)
+    x = preprocess_input(input_layer)
+
+    model = model(x)
+
+    output_layer = attach_final_layers(model, classes)
+
+    return Model(inputs=input_layer, outputs=output_layer)

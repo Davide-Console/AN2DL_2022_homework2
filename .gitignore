@@ -10,6 +10,7 @@ submission.zip
 *.csv
 *.h5
 submission/SubmissionModel
+GPU_MEMORY.py
 
 # C extensions
 *.so
