@@ -15,7 +15,7 @@ No consideration on the stride.
 MODELS
 * 1DCNN
   train 69.70% test 60.49% hiddenTest 66.14% using SS CategoricalCrossEntropy
-  train 74.88% test 68.31& hiddenTest 69.77% using SS variableTraining(adjustWeights) CategoricalCrossentropy
+  train 74.88% test 68.31& hiddenTest 69.77% using SS variableTraining(adjustWeights, power=4) CategoricalCrossentropy
   train 62.69% test 55.56% using CategoricalFocalLoss
 * LSTM
   train 72.57% test 53.65%

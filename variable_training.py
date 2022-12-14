@@ -5,7 +5,7 @@ from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import PolynomialDecay
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
+from architectures import get_model
 from networks import *
 from data_utils import *
 from train_utils import *
@@ -153,7 +153,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
     print(class_weights)
 
     epoch = 0
-    print(model.summary())
+
 
     for phase in range(phases):
         print("Starting phase ", phase)
@@ -236,7 +236,9 @@ if __name__ == '__main__':
     filters = 128
 
     # model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
-    model = customcnn(x_train.shape[1:], y_train.shape[-1])
+    # model = customcnn(x_train.shape[1:], y_train.shape[-1])
+    # model = build_FFNN_classifier(x_train.shape[1:], y_train.shape[-1])
+    model = get_model('resnet', x_train.shape[1:], y_train.shape[-1])
 
     learn_rates = [0.001, 0.0006, 3.6784e-04, 2.1350e-04, 1.2595e-04, 8.0690e-05, 6.0140e-05, 5.2440e-05,
                    5.0330e-05, 5.0011e-05]
