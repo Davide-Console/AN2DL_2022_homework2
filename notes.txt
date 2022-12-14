@@ -12,7 +12,15 @@ WINDOWING
 For now, models seem to prefer big windows rather then small ones.
 No consideration on the stride.
 
+REGULARIZATION
+Tried it but it does not improve none of the tested models
+
 MODELS
+* NN CLASSIFIER
+  train 82.81% test 70.58% hiddenTest 71,22% using SS variableTraining(adjustWeights, power=4) CategoricalCrossEntropy
+  train 82.96% test 60.49% using SS variableTraining(adjustWeights, power=4) CategoricalCrossEntropy regularization
+  train 78.18% test 65.64% using SS variableTraining(adjustWeights, power=4) CategoricalCrossEntropy dataAug (dopo un po overfitta male)
+  fine tuning partendo da BM_NN_Classifier con data aug o senza ma con loss bassa non aumenta il val_acc
 * 1DCNN
   train 69.70% test 60.49% hiddenTest 66.14% using SS CategoricalCrossEntropy
   train 74.88% test 68.31& hiddenTest 69.77% using SS variableTraining(adjustWeights, power=4) CategoricalCrossentropy
@@ -26,8 +34,11 @@ MODELS
   train 47.17% test 44.35%
 * 1DCNN (customcnn)
   train 100.00% test 70.78% hiddenTest 70.74% using SS variableTraining(adjustWeights, power=6) CategoricalCrossentropy
+* RESNET: less then 65%
+* VGG: less then 65%
 
 TESTED TRAIN FEATURES
 class weights
 categorical cross entropy
 categorical focal loss
+regularization
