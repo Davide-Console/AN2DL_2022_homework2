@@ -90,6 +90,28 @@ def apply_scaler(scaler_filename, data):
     return data
 
 
+def feature_to_2D(feature):
+    dims = feature.shape
+    feature_to_img = np.zeros((dims[0], dims[0]))
+    for i in range(dims[0]):
+        feature_to_img[i, :] = feature
+    for j in range(dims[0]):
+        feature_to_img[:, j] = feature_to_img[:, j] - feature
+
+    return feature_to_img
+
+
+def reshape22D(data):
+    dims = data.shape
+    reshaped_data = np.zeros((dims[0], dims[1], dims[1], dims[2]))
+    for sample in range(dims[0]):
+        signal_to_img = np.zeros((dims[1], dims[1], dims[2]))
+        for feature in range(dims[2]):
+            signal_to_img[:, :, feature] = feature_to_2D(data[sample, :, feature])
+        reshaped_data[sample] = signal_to_img
+    return reshaped_data
+
+
 def build_sequences(x_data, y_data, window, stride):
     x_output = []
     y_output = []

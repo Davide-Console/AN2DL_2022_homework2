@@ -4,12 +4,16 @@ from tensorflow.keras.layers import Dense, GlobalAvgPool2D
 from tensorflow.keras.layers import Input, Dropout
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.models import Model, model_from_json
 from sklearn.model_selection import StratifiedShuffleSplit
 from data_utils import *
 import os
 import tempfile
+from tensorflow.keras import backend as K
+
+from tensorflow.python.keras.applications.efficientnet import EfficientNetB0
+from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -186,34 +190,82 @@ def build_model(
     return model
 
 
-def customcnn(input_shape, classes):
-    input_layer = layers.Input(shape=input_shape)
-    x = layers.Conv1D(filters=64, kernel_size=3, padding="same", activation='relu')(input_layer)
-    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
-    x = layers.Conv1D(filters=128, kernel_size=3, padding="same", activation="relu")(x)
-    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
-    cnn = tfkl.Conv1D(filters=256, kernel_size=3, padding="same", activation="relu")(x)
-    cnn = tfkl.MaxPooling1D(pool_size=2, strides=2)(cnn)
-    cnn = tfkl.Conv1D(filters=512, kernel_size=3, padding="same", activation="relu")(cnn)
-    cnn = tfkl.GlobalAveragePooling1D()(cnn)
-    cnn = tfkl.Dense(512, activation="relu",
-    kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4),
-    bias_regularizer=regularizers.L2(1e-4))(cnn)
-    cnn = tfkl.Dense(256, activation="relu",
-    kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4),
-    bias_regularizer=regularizers.L2(1e-4))(cnn)
-    cnn = tfkl.Dense(128, activation="relu",
-    kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4),
-    bias_regularizer=regularizers.L2(1e-4))(cnn)
-    cnn = tfkl.Dropout(0.4)(cnn)
-    output_layer = tfkl.Dense(classes, activation="softmax",
-    kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4),
-    bias_regularizer=regularizers.L2(1e-4))(cnn)
+def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.0001, l2=0.00001):
+    model = EfficientNetB0(include_top=False,
+                           weights=weights,
+                           input_shape=input_shape,
+                           classes=8)
 
-    model = tfk.Model(inputs=input_layer, outputs=output_layer, name='model')
+    model.trainable = True
 
-    # Return the model
-    return model
+    if regularize:
+        model = add_regularization(model, l1, l2)
+
+    input_layer = Input(shape=input_shape)
+    x = preprocess_input(input_layer)
+
+    model = model(x)
+
+    output_layer = attach_final_layers(model, classes)
+
+    return Model(inputs=input_layer, outputs=output_layer)
+
+
+def cbr(input, filters, kernel_size, strides):
+    '''
+    Convolution - BatchNorm - ReLU - Dropout
+    '''
+    net = layers.Conv2D(filters=filters, kernel_size=kernel_size, kernel_initializer='he_uniform',
+                        kernel_regularizer=regularizers.l2(0.0001),
+                        strides=strides, padding='same')(input)
+    net = layers.BatchNormalization()(net)
+    net = layers.Activation('relu')(net)
+    net = Dropout(rate=0.2)(net)
+    return net
+
+
+def skip_blk(input, filters, kernel_size=3, strides=1):
+    net = cbr(input=input, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)
+    skip = cbr(input=input, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = layers.Add()([skip, net])
+    net = cbr(input=net, filters=filters, kernel_size=3, strides=strides * 2)
+    return net
+
+
+def customcnn(input_shape=(36, 36, 6), classes=12, filters=None):
+    '''
+    Arguments:
+      input_shape: tuple of integers indicating height, width, channels
+      classes    : integer to set number of classes
+      filters    : list of integers - each list element sets the number of filters used in a skip block
+    '''
+
+    if filters is None:
+        filters = [8, 16, 32, 64, 128]
+    input_layer = Input(shape=input_shape)
+    net = input_layer
+
+    for f in filters:
+        net = skip_blk(net, f)
+
+    # reduce channels
+    f = int((filters[-1] / 2 - classes) / 2)
+    net = skip_blk(net, f)
+
+    # create a conv layer that will reduce feature maps to (1,1,classes)
+    h = K.int_shape(net)[1]
+    w = K.int_shape(net)[2]
+
+    net = layers.Conv2D(filters=classes, kernel_size=(h, w), kernel_initializer='he_uniform',
+                        kernel_regularizer=regularizers.l2(0.0001), strides=w, padding='valid')(net)
+
+    net = layers.GlobalAveragePooling2D()(net)
+
+    output_layer = layers.Activation('softmax')(net)
+
+    return Model(inputs=input_layer, outputs=output_layer)
 
 
 def build_NN_classifier(input_shape, classes, filters=128):
@@ -246,15 +298,27 @@ def build_NN_classifier(input_shape, classes, filters=128):
     return model
 
 
+def get_MobileNetV3Small(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.00005, l2=0.00005):
+    model = MobileNetV3Small(include_top=False,
+                             weights=weights,
+                             input_shape=input_shape,
+                             classes=8)
+
+    model.trainable = True
+
+    if regularize:
+        model = add_regularization(model, l1, l2)
+
+    input_layer = Input(shape=input_shape)
+    x = preprocess_input(input_layer)
+
+    model = model(x)
+
+    output_layer = attach_final_layers(model, classes)
+
+    return Model(inputs=input_layer, outputs=output_layer)
+
+
 if __name__ == '__main__':
-    x_data, y_data = load_dataset()
-
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-    for i, (train_index, test_index) in enumerate(sss.split(x_data, y_data)):
-        x_train = x_data[train_index]
-        y_train = y_data[train_index]
-        x_test = x_data[test_index]
-        y_test = y_data[test_index]
-
-    model = build_FFNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=128)
+    model = customcnn()
     model.summary()

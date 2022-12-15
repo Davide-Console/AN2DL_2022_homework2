@@ -36,6 +36,8 @@ MODELS
   train 100.00% test 70.78% hiddenTest 70.74% using SS variableTraining(adjustWeights, power=6) CategoricalCrossentropy
 * RESNET: less then 65%
 * VGG: less then 65%
+*customcnn 2D
+  train 72.98% test hiddenTest 66.06 using SS variableTraining(adjustWeights, power=6) CategoricalCrossEntropy
 
 TESTED TRAIN FEATURES
 class weights

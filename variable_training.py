@@ -221,6 +221,8 @@ if __name__ == '__main__':
     fit_scaler('scaler.pkl', x_train)
     x_train = apply_scaler('scaler.pkl', x_train)
     x_test = apply_scaler('scaler.pkl', x_test)
+    x_train = reshape22D(x_train)
+    x_test = reshape22D(x_test)
     #
     # # windowing
     # x_train, y_train = build_sequences(x_train, y_train, 30, 3)
