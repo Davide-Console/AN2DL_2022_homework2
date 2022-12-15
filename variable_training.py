@@ -5,11 +5,13 @@ from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import PolynomialDecay
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
+from architectures import get_model
 from networks import *
 from data_utils import *
 from train_utils import *
 import execution_settings
+from data_aug import *
+
 
 def compute_weights(labels):
     labels = np.argmax(labels, axis=-1)
@@ -111,7 +113,6 @@ def get_callbacks(phase_epochs):
 
 def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoch_flags: (int, list), learn_rates,
                       loss_functions, class_weights: dict, adjust_weights, classes: int):
-
     if type(epoch_flags) == int:
         assert epoch_flags < epochs
         step = epoch_flags
@@ -129,7 +130,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
     if type(learn_rates) == list:
         assert len(learn_rates) == phases + 1  # I need the end_learning_rate for last phase
     elif type(learn_rates) == float:
-        learn_rates = [learn_rates] * (phases + 1) # I need the end_learning_rate for last phase
+        learn_rates = [learn_rates] * (phases + 1)  # I need the end_learning_rate for last phase
     else:
         assert callable(learn_rates)  # check it is a function
 
@@ -153,7 +154,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
     print(class_weights)
 
     epoch = 0
-    print(model.summary())
+
 
     for phase in range(phases):
         print("Starting phase ", phase)
@@ -166,7 +167,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
         end_learning_rate = learn_rates[phase + 1]
         learning_rate_fn = PolynomialDecay(
             learn_rates[phase],
-            decay_steps=89 * phase_epochs, #89 steps per epochs with batch_size = 32
+            decay_steps=89 * phase_epochs,  # 89 steps per epochs with batch_size = 32
             end_learning_rate=end_learning_rate,
             power=2.3)
 
@@ -189,7 +190,7 @@ def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoc
         y_true = y_test
         y_pred = model.predict(x_test)
         scores = classification_report(np.argmax(y_true, axis=-1), np.argmax(y_pred, axis=-1), digits=4,
-                                    output_dict=True)
+                                       output_dict=True)
 
         print(classification_report(np.argmax(y_true, axis=-1), np.argmax(y_pred, axis=-1), digits=4,
                                     output_dict=False))
@@ -224,13 +225,17 @@ if __name__ == '__main__':
     x_test = reshape22D(x_test)
     #
     # # windowing
-    #x_train, y_train = build_sequences(x_train, y_train, 30, 3)
-    #x_test, y_test = build_sequences(x_test, y_test, 30, 3)
+    # x_train, y_train = build_sequences(x_train, y_train, 30, 3)
+    # x_test, y_test = build_sequences(x_test, y_test, 30, 3)
 
     print(x_train.shape[0])
     print(y_train.shape[0])
     y_train = tfk.utils.to_categorical(y_train)
     y_test = tfk.utils.to_categorical(y_test)
+
+    # augmentation
+    aug_ratio = 0
+    x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'rotation')
 
     # declare model
     classes = 12
@@ -239,7 +244,8 @@ if __name__ == '__main__':
 
     # model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
     # model = customcnn(x_train.shape[1:], y_train.shape[-1])
-    model = get_EfficientNetB0()
+    # model = build_FFNN_classifier(x_train.shape[1:], y_train.shape[-1])
+    model = get_model('resnet', x_train.shape[1:], y_train.shape[-1])
 
     learn_rates = [0.001, 0.0006, 3.6784e-04, 2.1350e-04, 1.2595e-04, 8.0690e-05, 6.0140e-05, 5.2440e-05,
                    5.0330e-05, 5.0011e-05]

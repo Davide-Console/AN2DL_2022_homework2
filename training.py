@@ -101,7 +101,9 @@ def train():
     batch_size = 128
     filters = 128
 
-    model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    #model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
+    model = tf.keras.models.load_model('float_model/0.7058-0.8281-f_model.h5')
+    print(model.summary())
     #model = build_LSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
     #model = build_BiLSTM_classifier(x_train.shape[1:], y_train.shape[-1], units=filters)
     #model = build_model(x_train.shape[1:],head_size=256, num_heads=4, ff_dim=4, num_transformer_blocks=4, mlp_units=[128], mlp_dropout=0.4, dropout=0.25, n_classes=12)

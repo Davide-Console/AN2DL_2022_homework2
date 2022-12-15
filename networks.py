@@ -6,6 +6,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.models import Model, model_from_json
+from sklearn.model_selection import StratifiedShuffleSplit
+from data_utils import *
 import os
 import tempfile
 from tensorflow.keras import backend as K
@@ -186,7 +188,6 @@ def build_model(
 
     return model
 
-
 def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.0001, l2=0.00001):
     model = EfficientNetB0(include_top=False,
                            weights=weights,
@@ -264,6 +265,46 @@ def customcnn(input_shape=(36, 36, 6), classes=12, filters=None):
 
     return Model(inputs=input_layer, outputs=output_layer)
 
+
+def build_NN_classifier(input_shape, classes, filters=128):
+    # Build the neural network layer by layer
+    input_layer = tfkl.Input(shape=input_shape, name='Input')
+
+    # Classifier
+    x = layers.Conv1D(filters=64, kernel_size=3, padding="same", activation='relu')(input_layer)
+    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
+    x = layers.Conv1D(filters=128, kernel_size=3, padding="same", activation="relu")(x)
+    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
+    x = layers.Conv1D(filters=256, kernel_size=3, padding="same", activation="relu")(x)
+    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
+    cnn = tfkl.Conv1D(filters=512, kernel_size=3, padding="same", activation="relu")(x)
+    cnn = tfkl.GlobalAveragePooling1D()(cnn)
+    classifier = tfkl.Dense(512, activation='relu')(cnn)
+    dropout = tfkl.Dropout(.5, seed=seed)(classifier)
+    classifier = tfkl.Dense(256, activation='relu')(dropout)
+    dropout = tfkl.Dropout(.5, seed=seed)(classifier)
+    classifier = tfkl.Dense(128, activation='relu')(dropout)
+    dropout = tfkl.Dropout(.5, seed=seed)(classifier)
+    classifier = tfkl.Dense(64, activation='relu')(dropout)
+    dropout = tfkl.Dropout(.5, seed=seed)(classifier)
+    output_layer = tfkl.Dense(classes, activation='softmax')(dropout)
+
+    # Connect input and output through the Model class
+    model = tfk.Model(inputs=input_layer, outputs=output_layer, name='model')
+
+    # Return the model
+    return model
+
+
 if __name__ == '__main__':
-    model = customcnn()
-    print(model.summary())
+    x_data, y_data = load_dataset()
+
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+    for i, (train_index, test_index) in enumerate(sss.split(x_data, y_data)):
+        x_train = x_data[train_index]
+        y_train = y_data[train_index]
+        x_test = x_data[test_index]
+        y_test = y_data[test_index]
+
+    model = build_NN_classifier(x_train.shape[1:], y_train.shape[-1], filters=128)
+    model.summary()
