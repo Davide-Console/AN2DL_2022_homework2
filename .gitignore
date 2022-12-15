@@ -8,9 +8,8 @@ tb_logs/
 dataset/
 submission.zip
 *.csv
-*.h5
-submission/SubmissionModel
 GPU_MEMORY.py
+!submission/SubmissionModel/scaler.pkl
 
 # C extensions
 *.so
