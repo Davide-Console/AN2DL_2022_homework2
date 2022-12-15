@@ -8,6 +8,7 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 from tensorflow.keras.models import Model, model_from_json
 import os
 import tempfile
+from tensorflow.keras import backend as K
 
 from tensorflow.python.keras.applications.efficientnet import EfficientNetB0
 
@@ -186,26 +187,7 @@ def build_model(
     return model
 
 
-def customcnn(input_shape, classes):
-    input_layer = layers.Input(shape=input_shape)
-    x = layers.Conv1D(filters=64, kernel_size=3, padding="same", activation='relu')(input_layer)
-    x = layers.Conv1D(filters=128, kernel_size=3, padding="same", activation="relu")(x)
-    x = tfkl.MaxPooling1D(pool_size=2, strides=2)(x)
-    cnn = tfkl.Conv1D(filters=256, kernel_size=3, padding="same", activation="relu")(x)
-    cnn = tfkl.MaxPooling1D(pool_size=2, strides=2)(cnn)
-    cnn = tfkl.Conv1D(filters=512, kernel_size=3, padding="same", activation="relu")(cnn)
-    cnn = tfkl.GlobalMaxPooling1D()(cnn)
-    cnn = tfkl.Dense(512, activation="relu")(cnn)
-    cnn = tfkl.Dropout(0.4)(cnn)
-    output_layer = tfkl.Dense(classes, activation="softmax")(cnn)
-
-    model = tfk.Model(inputs=input_layer, outputs=output_layer, name='model')
-
-    # Return the model
-    return model
-
-
-def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.00001, l2=0.00001):
+def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.0001, l2=0.00001):
     model = EfficientNetB0(include_top=False,
                            weights=weights,
                            input_shape=input_shape,
@@ -224,3 +206,64 @@ def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regula
     output_layer = attach_final_layers(model, classes)
 
     return Model(inputs=input_layer, outputs=output_layer)
+
+
+def cbr(input, filters, kernel_size, strides):
+    '''
+    Convolution - BatchNorm - ReLU - Dropout
+    '''
+    net = layers.Conv2D(filters=filters, kernel_size=kernel_size, kernel_initializer='he_uniform',
+                        kernel_regularizer=regularizers.l2(0.01),
+                        strides=strides, padding='same')(input)
+    net = layers.BatchNormalization()(net)
+    net = layers.Activation('relu')(net)
+    net = Dropout(rate=0.2)(net)
+    return net
+
+
+def skip_blk(input, filters, kernel_size=3, strides=1):
+    net = cbr(input=input, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)
+    skip = cbr(input=input, filters=filters, kernel_size=kernel_size, strides=strides)
+    net = layers.Add()([skip, net])
+    net = cbr(input=net, filters=filters, kernel_size=3, strides=strides * 2)
+    return net
+
+
+def customcnn(input_shape=(36, 36, 6), classes=12, filters=None):
+    '''
+    Arguments:
+      input_shape: tuple of integers indicating height, width, channels
+      classes    : integer to set number of classes
+      filters    : list of integers - each list element sets the number of filters used in a skip block
+    '''
+
+    if filters is None:
+        filters = [8, 16, 32, 64, 128]
+    input_layer = Input(shape=input_shape)
+    net = input_layer
+
+    for f in filters:
+        net = skip_blk(net, f)
+
+    # reduce channels
+    f = int((filters[-1] / 2 - classes) / 2)
+    net = skip_blk(net, f)
+
+    # create a conv layer that will reduce feature maps to (1,1,classes)
+    h = K.int_shape(net)[1]
+    w = K.int_shape(net)[2]
+
+    net = layers.Conv2D(filters=classes, kernel_size=(h, w), kernel_initializer='he_uniform',
+                        kernel_regularizer=regularizers.l2(0.01), strides=w, padding='valid')(net)
+
+    net = layers.Flatten()(net)
+
+    output_layer = layers.Activation('softmax')(net)
+
+    return Model(inputs=input_layer, outputs=output_layer)
+
+if __name__ == '__main__':
+    model = customcnn()
+    print(model.summary())

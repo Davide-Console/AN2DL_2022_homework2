@@ -95,6 +95,8 @@ def feature_to_2D(feature):
     feature_to_img = np.zeros((dims[0], dims[0]))
     for i in range(dims[0]):
         feature_to_img[i, :] = feature
+    for j in range(dims[0]):
+        feature_to_img[:, j] = feature_to_img[:, j] - feature
 
     return feature_to_img
 
