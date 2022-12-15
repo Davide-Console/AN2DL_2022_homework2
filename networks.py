@@ -13,6 +13,7 @@ import tempfile
 from tensorflow.keras import backend as K
 
 from tensorflow.python.keras.applications.efficientnet import EfficientNetB0
+from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -188,6 +189,7 @@ def build_model(
 
     return model
 
+
 def get_EfficientNetB0(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.0001, l2=0.00001):
     model = EfficientNetB0(include_top=False,
                            weights=weights,
@@ -214,7 +216,7 @@ def cbr(input, filters, kernel_size, strides):
     Convolution - BatchNorm - ReLU - Dropout
     '''
     net = layers.Conv2D(filters=filters, kernel_size=kernel_size, kernel_initializer='he_uniform',
-                        kernel_regularizer=regularizers.l2(0.01),
+                        kernel_regularizer=regularizers.l2(0.0001),
                         strides=strides, padding='same')(input)
     net = layers.BatchNormalization()(net)
     net = layers.Activation('relu')(net)
@@ -257,9 +259,9 @@ def customcnn(input_shape=(36, 36, 6), classes=12, filters=None):
     w = K.int_shape(net)[2]
 
     net = layers.Conv2D(filters=classes, kernel_size=(h, w), kernel_initializer='he_uniform',
-                        kernel_regularizer=regularizers.l2(0.01), strides=w, padding='valid')(net)
+                        kernel_regularizer=regularizers.l2(0.0001), strides=w, padding='valid')(net)
 
-    net = layers.Flatten()(net)
+    net = layers.GlobalAveragePooling2D()(net)
 
     output_layer = layers.Activation('softmax')(net)
 
@@ -296,15 +298,27 @@ def build_NN_classifier(input_shape, classes, filters=128):
     return model
 
 
+def get_MobileNetV3Small(weights=None, input_shape=(36, 36, 6), classes=12, regularize=True, l1=0.00005, l2=0.00005):
+    model = MobileNetV3Small(include_top=False,
+                             weights=weights,
+                             input_shape=input_shape,
+                             classes=8)
+
+    model.trainable = True
+
+    if regularize:
+        model = add_regularization(model, l1, l2)
+
+    input_layer = Input(shape=input_shape)
+    x = preprocess_input(input_layer)
+
+    model = model(x)
+
+    output_layer = attach_final_layers(model, classes)
+
+    return Model(inputs=input_layer, outputs=output_layer)
+
+
 if __name__ == '__main__':
-    x_data, y_data = load_dataset()
-
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-    for i, (train_index, test_index) in enumerate(sss.split(x_data, y_data)):
-        x_train = x_data[train_index]
-        y_train = y_data[train_index]
-        x_test = x_data[test_index]
-        y_test = y_data[test_index]
-
-    model = build_NN_classifier(x_train.shape[1:], y_train.shape[-1], filters=128)
+    model = customcnn()
     model.summary()
