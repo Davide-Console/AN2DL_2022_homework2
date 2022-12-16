@@ -230,12 +230,15 @@ if __name__ == '__main__':
 
     print(x_train.shape[0])
     print(y_train.shape[0])
-    y_train = tfk.utils.to_categorical(y_train)
-    y_test = tfk.utils.to_categorical(y_test)
 
     # augmentation
     aug_ratio = 0
-    x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'rotation')
+    x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'jitter')
+
+    y_train = tfk.utils.to_categorical(y_train)
+    y_test = tfk.utils.to_categorical(y_test)
+
+
 
     # declare model
     classes = 12
