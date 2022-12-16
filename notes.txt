@@ -2,6 +2,11 @@ DATA OBSERVATION
 Dataset is strongly unbalanced.
 We did a stratified split and we trained nets with weighted samples
 
+FEATURES SELECTION
+The 6 features are hardly lirearry correlated with target classes.
+they are also not very correlated between each other. Since class 4 and 5 (in range [0 5]) have a pearson coeff=0.7 we
+removed class 4 since it is the most correlated with the other features.
+
 DATA NORMALIZATION
 We noticed that the difference between the mean values of the six features was too big.
 For this reason the MinMaxScaler was not adopted since each feature had a very narrow range of values with big
@@ -21,6 +26,10 @@ MODELS
   train 82.96% test 60.49% using SS variableTraining(adjustWeights, power=4) CategoricalCrossEntropy regularization
   train 78.18% test 65.64% using SS variableTraining(adjustWeights, power=4) CategoricalCrossEntropy dataAug (dopo un po overfitta male)
   fine tuning partendo da BM_NN_Classifier con data aug o senza ma con loss bassa non aumenta il val_acc
+* 1 vs All NN CLASSIFIER
+  Test 84.xx% hiddenTest 60.xx% --> learned not significant features, in particular for least recurrent classes. (learned by memory)
+* 5 FEATURES
+  hiddenTest 67.95%
 * 1DCNN
   train 69.70% test 60.49% hiddenTest 66.14% using SS CategoricalCrossEntropy
   train 74.88% test 68.31& hiddenTest 69.77% using SS variableTraining(adjustWeights, power=4) CategoricalCrossentropy

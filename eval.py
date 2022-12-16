@@ -1,6 +1,8 @@
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedShuffleSplit
+
 from data_utils import *
+
 seed = 1
 import tensorflow as tf
 from submission.model import model
