@@ -5,11 +5,11 @@ Our project has been developed with TensorFlow 2.4.1 and python 3.9.15pr
 
 In a terminal execute:
 ```bash
-git clone https://github.com/noemimanzo/AN2DL_2022_homework1.git
-cd AN2DL_2022_homework1
+git clone https://github.com/Davide-Console/AN2DL_2022_homework2.git
+cd AN2DL_2022_homework2
 ```
 ## Networks
-To visualize the architecture of pur best model execute
+To visualize the architecture of our best model execute
 ```bash
 python networks.py
 ```
@@ -24,7 +24,7 @@ To perform training with time-series of 6 features (default):
 python variable_training.py
 ```
 
-To perform training with time-series of 5 features:
+To perform training with time-series of 5 features, without the most related one:
 ```bash
 python variable_training.py -mod 5_features
 ```
