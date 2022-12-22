@@ -1,16 +1,15 @@
+import argparse
+
 from sklearn.metrics import classification_report
-from sklearn.model_selection import StratifiedShuffleSplit
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger
 from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import PolynomialDecay
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from architectures import get_model
-from networks import *
-from data_utils import *
-from train_utils import *
-import execution_settings
+
 from data_aug import *
+from data_utils import *
+from networks import *
+from train_utils import *
 
 
 def compute_weights(labels):
@@ -208,6 +207,13 @@ if __name__ == '__main__':
 
     seed = 1
 
+    parser = argparse.ArgumentParser(
+        prog='ProgramName',
+        description='What the program does',
+        epilog='Text at the bottom of help')
+    parser.add_argument('-mod', '--modality', type=str, default='6_features', choices=['6_features', '5_features', 'data_aug', '2d', 'fft'], help='If True, performs jittering and permutation on time-series.')
+    args = parser.parse_args()
+
     x_data, y_data = load_dataset()
 
     sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
@@ -216,24 +222,34 @@ if __name__ == '__main__':
         y_train = y_data[train_index]
         x_test = x_data[test_index]
         y_test = y_data[test_index]
-    #
+
     # normalize dataset
     fit_scaler('scaler.pkl', x_train)
     x_train = apply_scaler('scaler.pkl', x_train)
     x_test = apply_scaler('scaler.pkl', x_test)
-    x_train = reshape22D(x_train)
-    x_test = reshape22D(x_test)
-    #
-    # # windowing
-    # x_train, y_train = build_sequences(x_train, y_train, 30, 3)
-    # x_test, y_test = build_sequences(x_test, y_test, 30, 3)
 
-    print(x_train.shape[0])
-    print(y_train.shape[0])
+    assert x_train.shape[0] == y_train.shape[0]
 
-    # augmentation
-    aug_ratio = 0
-    x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'jitter')
+    # --modality = data_aug
+    if args.modality == 'data_aug':
+        aug_ratio = 1
+        x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'jitter')
+        x_train, y_train = timeseries_aug(x_train, y_train, aug_ratio, 'permutation')
+
+    # --modality = 5_features
+    if args.modality == '5_features':
+        x_train = x_train[:, :, [0, 1, 2, 3, 5]]
+        x_test = x_test[:, :, [0, 1, 2, 3, 5]]
+
+    # --modality = 2d
+    if args.modality == '2d':
+        x_train = reshape22D(x_train)
+        x_test = reshape22D(x_test)
+
+    # --modality = fft
+    if args.modality == 'fft':
+        x_train = add_fft(x_train)
+        x_test = add_fft(x_test)
 
     y_train = tfk.utils.to_categorical(y_train)
     y_test = tfk.utils.to_categorical(y_test)
@@ -243,12 +259,13 @@ if __name__ == '__main__':
     # declare model
     classes = 12
     batch_size = 128
-    filters = 128
 
-    # model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1], filters=filters)
-    # model = customcnn(x_train.shape[1:], y_train.shape[-1])
-    # model = build_FFNN_classifier(x_train.shape[1:], y_train.shape[-1])
-    model = get_model('resnet', x_train.shape[1:], y_train.shape[-1])
+    if args.modality == 'data_aug' or args.modality == '6_features' or args.modality == '5_features' or args.modality == 'fft':
+        model = build_1DCNN_classifier(x_train.shape[1:], y_train.shape[-1])
+    if args.modality == '2d':
+        model=get_EfficientNetB0()
+
+    print(model.summary())
 
     learn_rates = [0.001, 0.0006, 3.6784e-04, 2.1350e-04, 1.2595e-04, 8.0690e-05, 6.0140e-05, 5.2440e-05,
                    5.0330e-05, 5.0011e-05]
@@ -259,6 +276,6 @@ if __name__ == '__main__':
     for i in range(classes):
         cl_w.update({i: 1})
 
-    variable_training(model, x_train, x_test, y_train, y_test, epochs=900, epoch_flags=100,
+    variable_training(model, x_train, x_test, y_train, y_test, epochs=9, epoch_flags=1,
                       learn_rates=learn_rates, loss_functions=loss, class_weights=cl_w, adjust_weights=True,
                       classes=classes)

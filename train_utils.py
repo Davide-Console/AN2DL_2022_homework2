@@ -1,18 +1,6 @@
 import tensorflow.keras.backend as K
 
 def categorical_focal_loss(gamma=2.0, alpha=0.25):
-    """
-    Implementation of Focal Loss from the paper in multiclass classification
-    Formula:
-        loss = -alpha*((1-p)^gamma)*log(p)
-    Parameters:
-        alpha -- the same as wighting factor in balanced cross entropy
-        gamma -- focusing parameter for modulating factor (1-p)
-    Default value:
-        gamma -- 2.0 as mentioned in the paper
-        alpha -- 0.25 as mentioned in the paper
-    """
-
     def focal_loss(y_true, y_pred):
         # Define epsilon so that the backpropagation will not result in NaN
         # for 0 divisor case

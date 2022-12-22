@@ -1,17 +1,15 @@
-import tensorflow as tf
-from tensorflow.keras import regularizers
-from tensorflow.keras.layers import Dense, GlobalAvgPool2D
-from tensorflow.keras.layers import Input, Dropout
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.applications.efficientnet import preprocess_input
-from tensorflow.keras.models import Model, model_from_json
-from sklearn.model_selection import StratifiedShuffleSplit
-from data_utils import *
 import os
 import tempfile
-from tensorflow.keras import backend as K
 
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import backend as K
+from tensorflow.keras import layers
+from tensorflow.keras import regularizers
+from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.layers import Dense, GlobalAvgPool2D
+from tensorflow.keras.layers import Input, Dropout
+from tensorflow.keras.models import Model, model_from_json
 from tensorflow.python.keras.applications.efficientnet import EfficientNetB0
 from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
 
@@ -268,7 +266,7 @@ def customcnn(input_shape=(36, 36, 6), classes=12, filters=None):
     return Model(inputs=input_layer, outputs=output_layer)
 
 
-def build_NN_classifier(input_shape, classes, filters=128):
+def build_1DCNN_classifier(input_shape, classes, filters=128):
     # Build the neural network layer by layer
     input_layer = tfkl.Input(shape=input_shape, name='Input')
 
@@ -318,7 +316,17 @@ def get_MobileNetV3Small(weights=None, input_shape=(36, 36, 6), classes=12, regu
 
     return Model(inputs=input_layer, outputs=output_layer)
 
-
 if __name__ == '__main__':
-    model = customcnn()
+
+    x_train_dims = (36, 6)
+    y_train_dims = (12)
+
+    model = build_1DCNN_classifier(x_train_dims, y_train_dims)
+    print('1D CNN:')
     model.summary()
+    tfk.utils.plot_model(model, show_shapes=True, expand_nested=False, to_file='model.png')
+
+    print('2D CNN:')
+    model = get_EfficientNetB0()
+    model.summary()
+    tfk.utils.plot_model(model, show_shapes=True, expand_nested=False, to_file='model.png')

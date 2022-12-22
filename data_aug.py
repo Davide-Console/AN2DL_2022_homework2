@@ -1,6 +1,4 @@
 import numpy as np
-import os
-from data_utils import plot_sample
 
 
 def jitter(x, sigma=0.03):
@@ -53,7 +51,5 @@ def timeseries_aug(x, y, aug_ratio, method):
     train, counts_train_aug = np.unique(y_aug, return_counts=True)
     for i in range(12):
         print('class: ', i, '\ttrain samples: ', counts_train_aug[i])
-    plot_sample(x)
-    # plot_sample(x_aug)
 
     return x_aug, y_aug

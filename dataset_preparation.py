@@ -1,6 +1,6 @@
 import os
 import zipfile
-import numpy as np
+
 
 def extract_dataset(zipped_dataset, output_directory):
     """

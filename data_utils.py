@@ -1,10 +1,11 @@
-import numpy as np
-import tensorflow.keras.backend as K
 import math
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-import joblib
-import matplotlib.pyplot as plt
 import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.fft import fft
+from sklearn.preprocessing import StandardScaler
+
 np.random.seed(313)
 
 
@@ -79,7 +80,6 @@ def fit_scaler(scaler_filename, data):
     bidim_data = reshape(data)
     scaler = scaler.fit(bidim_data)
     pickle.dump(scaler, open(scaler_filename, 'wb'))
-    #joblib.dump(scaler, scaler_filename, 'w')
 
 
 def apply_scaler(scaler_filename, data):
@@ -131,83 +131,18 @@ def build_sequences(x_data, y_data, window, stride):
     return x_output, y_output
 
 
-def categorical_focal_loss(gamma=2.0, alpha=0.25):
-    """
-    Implementation of Focal Loss from the paper in multiclass classification
-    Formula:
-        loss = -alpha*((1-p)^gamma)*log(p)
-    Parameters:
-        alpha -- the same as wighting factor in balanced cross entropy
-        gamma -- focusing parameter for modulating factor (1-p)
-    Default value:
-        gamma -- 2.0 as mentioned in the paper
-        alpha -- 0.25 as mentioned in the paper
-    """
-
-    def focal_loss(y_true, y_pred):
-        # Define epsilon so that the backpropagation will not result in NaN
-        # for 0 divisor case
-        epsilon = K.epsilon()
-        # Add the epsilon to prediction value
-        # y_pred = y_pred + epsilon
-        # Clip the prediction value
-        y_pred = K.clip(y_pred, epsilon, 1.0 - epsilon)
-        # Calculate cross entropy
-        cross_entropy = -y_true * K.log(y_pred)
-        # Calculate weight that consists of  modulating factor and weighting factor
-        weight = alpha * y_true * K.pow((1 - y_pred), gamma)
-        # Calculate focal loss
-        loss = weight * cross_entropy
-        # Sum the losses in mini_batch
-        loss = K.sum(loss, axis=1)
-        return loss
-
-    return focal_loss
-
 def plot_sample(data):
     plt.plot(np.arange(0, data.shape[1]), data[0, :, 0])
     plt.show()
 
 
-if __name__ == '__main__':
-    x_data, y_data = load_dataset()
-    x_train, x_test, y_train, y_test = split_dataset(x_data, y_data, split=0.7, shuffle=False)
-    print('Before windowing')
-    print('dataset dimensions: ', x_data.shape)
-    print('labels length: ', y_data.shape)
-    print('\n')
-    print('total samples:\t', x_data.shape[0])
-    print('training samples:\t', x_train.shape[0])
-    print('validation samples:\t', x_test.shape[0])
-    data, counts_data = np.unique(y_data, return_counts=True)
-    train, counts_train = np.unique(y_train, return_counts=True)
-    test, counts_test = np.unique(y_test, return_counts=True)
-    print('\n')
-    for i in range(12):
-        print('class: ', i, '\tsamples: ', counts_data[i], '\tsplit: ', counts_train[i] / counts_data[i])
-    plot_sample(x_train)
-    plot_sample(x_test)
+def add_fft(data):
+    dims = data.shape
+    data_and_fft = np.zeros((dims[0], dims[1], dims[2]*2))
 
-    fit_scaler('scaler.pkl', x_train)
-    x_train = apply_scaler('scaler.pkl', x_train)
-    x_test = apply_scaler('scaler.pkl', x_test)
+    for sample in range(dims[0]):
+        for feature in range(dims[2]):
+            data_and_fft[sample, :, feature] = data[sample, :, feature]
+            data_and_fft[sample, :, feature+dims[2]] = abs(fft(data[sample, :, feature]))
 
-    # x_data, y_data = build_sequences(x_data, y_data, 12, 3)
-    # x_train, y_train = build_sequences(x_train, y_train, 12, 3)
-    # x_test, y_test = build_sequences(x_test, y_test, 12, 3)
-
-    print('After windowing')
-    print('dataset dimensions: ', x_data.shape)
-    print('labels length: ', y_data.shape)
-    print('\n')
-    print('total samples:\t', x_train.shape[0] + x_test.shape[0])
-    print('training samples:\t', x_train.shape[0])
-    print('validation samples:\t', x_test.shape[0])
-    train, counts_train = np.unique(y_train, return_counts=True)
-    test, counts_test = np.unique(y_test, return_counts=True)
-    print('\n')
-    for i in range(12):
-        print('class: ', i, '\tsamples: ', counts_train[i] + counts_test[i], '\tsplit: ',
-              counts_train[i] / (counts_train[i] + counts_test[i]))
-    plot_sample(x_train)
-    plot_sample(x_test)
+    return data_and_fft
