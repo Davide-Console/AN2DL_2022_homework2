@@ -1,6 +1,7 @@
 import argparse
 
 from sklearn.metrics import classification_report
+from sklearn.model_selection import StratifiedShuffleSplit
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, CSVLogger
 from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.optimizers import Adam
@@ -276,6 +277,6 @@ if __name__ == '__main__':
     for i in range(classes):
         cl_w.update({i: 1})
 
-    variable_training(model, x_train, x_test, y_train, y_test, epochs=9, epoch_flags=1,
+    variable_training(model, x_train, x_test, y_train, y_test, epochs=900, epoch_flags=100,
                       learn_rates=learn_rates, loss_functions=loss, class_weights=cl_w, adjust_weights=True,
                       classes=classes)
