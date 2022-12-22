@@ -5,6 +5,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import joblib
 import matplotlib.pyplot as plt
 import pickle
+from scipy.fft import fft
 np.random.seed(313)
 
 
@@ -73,6 +74,17 @@ def restore_shape(reshaped_data, original_shape):
             element += 1
     return restored_data
 
+
+def add_fft(data):
+    dims = data.shape
+    data_and_fft = np.zeros((dims[0], dims[1], dims[2]*2))
+
+    for sample in range(dims[0]):
+        for feature in range(dims[2]):
+            data_and_fft[sample, :, feature] = data[sample, :, feature]
+            data_and_fft[sample, :, feature+dims[2]] = abs(fft(data[sample, :, feature]))
+
+    return data_and_fft
 
 def fit_scaler(scaler_filename, data):
     scaler = StandardScaler()
