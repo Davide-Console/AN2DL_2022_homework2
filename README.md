@@ -1,7 +1,7 @@
 AN2DL_2022_homework2
 Berzoini Raffaele, Console Davide, Manzo Noemi
 
-Our project has been developed with TensorFlow X.X.X and python X.X
+Our project has been developed with TensorFlow 2.4.1 and python 3.9.15pr
 
 In a terminal execute:
 ```bash
