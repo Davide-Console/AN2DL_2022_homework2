@@ -14,6 +14,17 @@ from train_utils import *
 
 
 def compute_weights(labels):
+    """
+    Compute the weights for each class. The higher the number of samples for a class, the lower the weight.
+    Parameters
+    ----------
+    labels : numpy.ndarray
+        The labels of the dataset.
+    Returns
+    -------
+    dict_weights : dict
+        The weights for each class.
+    """
     labels = np.argmax(labels, axis=-1)
 
     occurrences = []
@@ -34,6 +45,23 @@ def compute_weights(labels):
 
 
 def get_f1(y_true, y_pred):
+    """
+        Computes the F1 score, the harmonic mean of precision and recall.
+        This is a better metric than accuracy, especially if for an uneven class distribution.
+        Source: https://stackoverflow.com/questions/43547402/how-to-calculate-f1-macro-in-keras
+        Source: https://www.kaggle.com/rejpalcz/best-loss-function-for-f1-score-metric
+        Source: https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
+        Parameters
+        ----------
+        y_true : TensorFlow/Theano tensor
+            A tensor of the same shape as `y_pred`
+        y_pred : TensorFlow/Theano tensor of float type
+            A tensor resulting from a sigmoid
+        Returns
+        -------
+        The F1 score as a single tensor.
+    """
+
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
@@ -44,6 +72,23 @@ def get_f1(y_true, y_pred):
 
 
 def get_next_flag(epoch, epoch_flags, epochs):
+    """
+        Returns the next flag in the epoch_flags list that is greater than the epoch.
+        If no such flag exists, returns the epochs value.
+        Parameters
+        ----------
+        epoch : int
+            The current epoch.
+        epoch_flags : list
+            A list of epochs at which to change the learning rate.
+        epochs : int
+            The total number of epochs.
+        Returns
+        -------
+        next_flag : int
+            The next flag in the epoch_flags list that is greater than the epoch.
+            If no such flag exists, returns the epochs value.
+    """
     next_flag = epochs
     i = 0
     while i < len(epoch_flags):
@@ -56,6 +101,19 @@ def get_next_flag(epoch, epoch_flags, epochs):
 
 
 def update_weights(scores, classes, power):
+    """
+        This function takes the scores of each class and returns the weights for each class.
+        The weights are calculated based on the f1-score of each class.
+        The higher the f1-score, the lower the weight.
+        The lower the f1-score, the higher the weight.
+        The weights are calculated using the following formula:
+            weight = 1 + (1 - f1**power / (np.max(f1s)**power + np.finfo(float).eps))
+        The power is a hyperparameter that can be tuned.
+        The default value is 2.
+        The weights are returned as a dictionary.
+        The keys are the class labels.
+        The values are the weights.
+    """
     f1s = []
     for i in range(classes):
         f1s.append(scores[str(i)]['f1-score'])
@@ -73,6 +131,12 @@ def update_weights(scores, classes, power):
 
 
 def get_binary_labels(Y, species=None):
+    """
+        This function takes in a matrix of labels and returns a binary matrix of labels.
+        If a species is specified, then the function returns a binary matrix of labels
+        where the specified species is 1 and all other species are 0.
+        If no species is specified, then the function returns the original matrix of labels.
+    """
     if species is not None:
         bin_labels = np.zeros([Y.shape[0], 1])
         for i in range(Y.shape[0]):
@@ -84,6 +148,29 @@ def get_binary_labels(Y, species=None):
 
 
 def get_callbacks(phase_epochs):
+    """
+        This function returns a list of callbacks to be used during training.
+        The callbacks are:
+            - TensorBoard
+            - ModelCheckpoint
+            - CSVLogger
+            - EarlyStopping
+            - CustomCallback
+        The TensorBoard callback is used to log the training and validation metrics
+        in a TensorBoard compatible format.
+        The ModelCheckpoint callback is used to save the model with the best validation
+        accuracy.
+        The CSVLogger callback is used to log the training and validation metrics
+        in a CSV file.
+        The EarlyStopping callback is used to stop the training when the validation
+        loss does not improve for a certain number of epochs.
+        The CustomCallback callback is used to print the current learning rate
+        at the beginning of each epoch.
+        Args:
+            phase_epochs: The number of epochs for the current training phase.
+        Returns:
+            A list of callbacks to be used during training.
+    """
     tboard = 'tb_logs'
     os.makedirs(tboard, exist_ok=True)
     tb_call = TensorBoard(log_dir=tboard)
@@ -113,6 +200,19 @@ def get_callbacks(phase_epochs):
 
 def variable_training(model, x_train, x_test, y_train, y_test, epochs: int, epoch_flags: (int, list), learn_rates,
                       loss_functions, class_weights: dict, adjust_weights, classes: int):
+    """
+        This function trains a model with variable learning rate, loss function and class weights.
+        The training is divided in phases, each one with its own learning rate, loss function and class weights.
+        The phases are defined by epoch_flags, which is a list of epochs where the training parameters change.
+        The last phase is defined by the last epoch_flag and the number of epochs.
+        The learning rate is defined by learn_rates, which is a list of learning rates for each phase.
+        The loss function is defined by loss_functions, which is a list of loss functions for each phase.
+        The class weights are defined by class_weights, which is a dictionary of weights for each class.
+        If adjust_weights is True, the class weights are updated at the end of each phase.
+        The number of classes is defined by classes.
+        The number of epochs is defined by epochs.
+        The trained model is returned.
+    """
     if type(epoch_flags) == int:
         assert epoch_flags < epochs
         step = epoch_flags

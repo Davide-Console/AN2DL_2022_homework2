@@ -223,6 +223,11 @@ def cbr(input, filters, kernel_size, strides):
 
 
 def skip_blk(input, filters, kernel_size=3, strides=1):
+    """
+        This function is used to create a skip block.
+        It takes in the input, filters, kernel_size, strides as parameters.
+        It returns the skip block.
+    """
     net = cbr(input=input, filters=filters, kernel_size=kernel_size, strides=strides)
     net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)
     net = cbr(input=net, filters=filters, kernel_size=kernel_size, strides=strides)

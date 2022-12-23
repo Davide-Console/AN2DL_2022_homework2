@@ -18,6 +18,14 @@ def load_dataset():
 
 
 def split_dataset(x_data, y_data, split=0.8, shuffle=False):
+    """
+    This function splits a dataset into training and validation sets.
+    The function first separates the data by class, and then splits each class into training and validation sets according to the specified split ratio.
+    The resulting training and validation sets are concatenated and returned as numpy arrays.
+    If shuffle is True, the data is shuffled before being split.
+    This function can be used to split a dataset into training and validation sets for model evaluation and hyperparameter tuning.
+    The split ratio can be adjusted to control the relative sizes of the training and validation sets.
+    """
     x_train = []
     y_train = []
     x_validation = []
@@ -54,6 +62,14 @@ def split_dataset(x_data, y_data, split=0.8, shuffle=False):
 
 
 def reshape(data):
+    """
+    This function reshapes a 3D array into a 2D array by flattening the first two dimensions.
+    The function creates a new 2D array with shape (num_samples * sequence_length, num_features) and assigns each element in the input array to the corresponding element in the new array.
+    It then returns the reshaped array.
+    This function is useful for reshaping time series data for processing by machine learning algorithms that expect 2D arrays as input.
+    :param data:
+    :return:
+    """
     dims = data.shape
     reshaped_data = np.zeros((dims[0] * dims[1], dims[2]))
     element = 0
@@ -65,6 +81,9 @@ def reshape(data):
 
 
 def restore_shape(reshaped_data, original_shape):
+    """
+    This function restores the original shape of a 3D array that has been reshaped into a 2D array.
+    """
     restored_shape = (original_shape[0], original_shape[1], original_shape[2])
     restored_data = np.zeros(restored_shape)
     element = 0
@@ -76,6 +95,9 @@ def restore_shape(reshaped_data, original_shape):
 
 
 def add_fft(data):
+    """
+    This function adds the fast Fourier transform (FFT) of each feature in a time series to the time series data.
+    """
     dims = data.shape
     data_and_fft = np.zeros((dims[0], dims[1], dims[2]*2))
 
@@ -87,6 +109,9 @@ def add_fft(data):
     return data_and_fft
 
 def fit_scaler(scaler_filename, data):
+    """
+    This function fits a standard scaler to a dataset and saves the scaler to a file.
+    """
     scaler = StandardScaler()
     bidim_data = reshape(data)
     scaler = scaler.fit(bidim_data)
@@ -94,6 +119,9 @@ def fit_scaler(scaler_filename, data):
 
 
 def apply_scaler(scaler_filename, data):
+    """
+    This function applies a scaler to a dataset by loading the scaler from a file and transforming the data.
+    """
     scaler = pickle.load(open(scaler_filename, 'rb'))
     bidim_data = reshape(data)
     bidim_data = scaler.transform(bidim_data)
@@ -102,6 +130,10 @@ def apply_scaler(scaler_filename, data):
 
 
 def feature_to_2D(feature):
+    """
+    This function converts a 1D feature array into a 2D image by replicating the feature values in the rows and columns of the image.
+    """
+
     dims = feature.shape
     feature_to_img = np.zeros((dims[0], dims[0]))
     for i in range(dims[0]):
@@ -113,6 +145,9 @@ def feature_to_2D(feature):
 
 
 def reshape22D(data):
+    """
+    This function reshapes a 3D array into a 4D array by converting each feature in the time series data into a 2D image.
+    """
     dims = data.shape
     reshaped_data = np.zeros((dims[0], dims[1], dims[1], dims[2]))
     for sample in range(dims[0]):
@@ -124,6 +159,13 @@ def reshape22D(data):
 
 
 def build_sequences(x_data, y_data, window, stride):
+    """
+    This function builds sequences of data from the input time series data and labels by sliding a window of a fixed size over the data and extracting the subsequences within the window at regular intervals.
+    The function first adds padding to the end of each time series in x_data to ensure that the length of the series is a multiple of window.
+    It then slides the window over the padded time series and extracts the subsequences within the window at intervals of stride.
+    The extracted subsequences and corresponding labels are appended to the x_output and y_output lists.
+    Finally, the function converts the lists to arrays and returns them.
+    """
     x_output = []
     y_output = []
     dims = x_data.shape
@@ -147,13 +189,4 @@ def plot_sample(data):
     plt.show()
 
 
-def add_fft(data):
-    dims = data.shape
-    data_and_fft = np.zeros((dims[0], dims[1], dims[2]*2))
 
-    for sample in range(dims[0]):
-        for feature in range(dims[2]):
-            data_and_fft[sample, :, feature] = data[sample, :, feature]
-            data_and_fft[sample, :, feature+dims[2]] = abs(fft(data[sample, :, feature]))
-
-    return data_and_fft
