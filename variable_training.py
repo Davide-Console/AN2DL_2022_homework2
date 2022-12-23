@@ -12,6 +12,9 @@ from data_utils import *
 from networks import *
 from train_utils import *
 
+"""It's greyed out but it actually does something. Do not remove"""
+import execution_settings
+
 
 def compute_weights(labels):
     """
