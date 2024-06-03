@@ -22,7 +22,7 @@ We experimented with several neural network architectures:
 - **2D CNN**
 
 The 1D CNN consistently outperformed other models. Our final model consisted of four 1D convolutional layers followed by five dense layers, with dropout applied to all dense layers, as showed in the following image.
-<p align="center"> <img align="center" src="./images/Picture1.png" width="450" /> <p/>
+<p align="center"> <img align="center" src="./images/Picture1.png" width="300" /> <p/>
 
 ### Training
 Our training was centered around the `variable_training.py` script, allowing customization of training parameters such as epochs, learning rates, loss functions, and class weights. The training process included:
